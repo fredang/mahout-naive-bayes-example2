@@ -41,6 +41,9 @@ public class MapReduceClassifier {
 		public void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 			String line = value.toString();
 			String[] tokens = line.split("\t", 2);
+			if (tokens.length < 2) {
+				return;
+			}
 			String tweetId = tokens[0];
 			String tweet = tokens[1];
 	
