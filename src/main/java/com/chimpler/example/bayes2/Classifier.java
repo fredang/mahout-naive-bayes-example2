@@ -12,7 +12,9 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.util.Version;
 import org.apache.mahout.classifier.naivebayes.NaiveBayesModel;
 import org.apache.mahout.classifier.naivebayes.StandardNaiveBayesClassifier;
 import org.apache.mahout.common.Pair;
@@ -20,7 +22,6 @@ import org.apache.mahout.common.iterator.sequencefile.SequenceFileIterable;
 import org.apache.mahout.math.RandomAccessSparseVector;
 import org.apache.mahout.math.Vector;
 import org.apache.mahout.math.Vector.Element;
-import org.apache.mahout.vectorizer.DefaultAnalyzer;
 import org.apache.mahout.vectorizer.TFIDF;
 
 import com.google.common.collect.ConcurrentHashMultiset;
@@ -45,7 +46,7 @@ public class Classifier {
 		documentFrequency = readDocumentFrequency(configuration, new Path(documentFrequencyPath));
 
 		// analyzer used to extract word from tweet
-		analyzer = new DefaultAnalyzer();
+		analyzer = new StandardAnalyzer(Version.LUCENE_43);
 		
 		NaiveBayesModel model = NaiveBayesModel.materialize(new Path(modelPath), configuration);
 		
@@ -58,7 +59,7 @@ public class Classifier {
 		Multiset<String> words = ConcurrentHashMultiset.create();
 		
 		// extract words from tweet
-		TokenStream ts = analyzer.reusableTokenStream("text", new StringReader(text));
+		TokenStream ts = analyzer.tokenStream("text", new StringReader(text));
 		CharTermAttribute termAtt = ts.addAttribute(CharTermAttribute.class);
 		ts.reset();
 		int wordCount = 0;
@@ -91,7 +92,7 @@ public class Classifier {
 		Vector resultVector = classifier.classifyFull(vector);
 		double bestScore = -Double.MAX_VALUE;
 		int bestCategoryId = -1;
-		for(Element element: resultVector) {
+		for(Element element: resultVector.all()) {
 			int categoryId = element.index();
 			double score = element.get();
 			if (score > bestScore) {
